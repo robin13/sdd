@@ -74,6 +74,7 @@ my $cli_args = {};
 my $result = GetOptions (
     "log_file=s"       => \$cli_args->{log_file},
     "log_level=s"      => \$cli_args->{log_level},
+    "config=s"         => \$cli_args->{config},
     "startup_buffer=i" => \$cli_args->{startup_buffer},
     "loop_sleep=i"     => \$cli_args->{loop_sleep},
     "h|help"           => \$cli_args->{help},
@@ -97,7 +98,8 @@ if( $cli_args->{help} ){
 
 # Some sane defaults
 my $default_args = {
-    log_file       => '/var/log/shutdown_manager.log',
+    log_file       => '/var/log/sdd.log',
+    config         => '/etc/sdd.conf',
     startup_buffer => 3600,
     loop_sleep     => 60,
     verbose        => 0,
