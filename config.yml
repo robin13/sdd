@@ -5,9 +5,9 @@ loop_sleep: 1
 startup_buffer: 1
 verbose: 1
 disks: 
- - /dev/sda
-# - /dev/sdc
-# - /dev/sdd
-# - /dev/sde
-# - /dev/sdf
+ - /dev/sdb
+ - /dev/sdc
+ - /dev/sdd
+ - /dev/sde
+ - /dev/sdf
 

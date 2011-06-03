@@ -4,6 +4,20 @@ It is a Linux service to ensure a server shuts down as soon as it can.
 
 Typical usage: a home NAS which is turned on when needed, but should shut down automatically when no users are using it any more.
 
-Services monitored:
-  SSH - will only shut down when no users are logged on to the machine
-  smb - will only shut down when there are no file locks open.
+Set hard disk spindown with hdparm:
+
+  hdparm -S <Int>
+
+or with /etc/hdparm.conf
+
+  /dev/sdb {
+    spindown_time = 240
+  }
+
+See man page for hdparm for details of spindown_time.
+
+See example config.yml file for configuration options, or application help:
+
+  sdd --help
+
+
