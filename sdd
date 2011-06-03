@@ -65,7 +65,7 @@ Robin Clarke <perl@robinclarke.net>
 
 use strict;
 use warnings;
-use YAML::Any;
+use YAML::Any qw/Dump LoadFile/;
 use Getopt::Long;
 use Pod::Usage;
 use Log::Log4perl;
@@ -106,10 +106,22 @@ my $default_args = {
     log_level      => 'INFO',
 };
 
+
 # Take CLI args if defined, otherwise the defaults
 my $args = {};
 foreach( keys( %{ $default_args } ) ){
     $args->{$_} = $cli_args->{$_} || $default_args->{$_};
+}
+
+if( $cli_args->{config} ){
+    if( not -f $cli_args->{config} ){
+        die( "Config file $cli_args->{config} not found" );
+    }
+    my $file_config = LoadFile( $cli_args->{config} );
+    %$args = (
+        %$args,
+        %$file_config,
+        );
 }
 
 # Dump the config
@@ -119,7 +131,7 @@ if( $cli_args->{show_config} ){
 }
 
 # Set up the logging
-my  $log4perl_conf = sprintf 'log4perl.rootLogger = %s, Logfile', $args->{log_level};
+my  $log4perl_conf = sprintf 'log4perl.rootLogger = %s, Logfile', $args->{log_level} || 'WARN';
 if( $args->{verbose} > 0 ){
     $log4perl_conf .= q(, Screen
 log4perl.appender.Screen         = Log::Log4perl::Appender::Screen
@@ -143,55 +155,34 @@ my $logger = Log::Log4perl->get_logger();
 
 $logger->info( "Started" );
 
-__END__
+$logger->info( "Sleeping $args->{startup_buffer} seconds before starting monitoring" );
+
+sleep( $args->{startup_buffer} );
 LOOP:
 while( 1 ){
-    sleep( $sleep );
-    if( uptime() < $uptime_offset ){
-        &log( "Staying online because uptime is " . uptime() . "  (Allowed: $uptime_offset)\n" );
-        next LOOP;
-    }    
+    my $shutdown = 1;
 
-    # See if anyone is logged in
-    my $users = `users`;
-    chomp $users;
-    if( $users =~ m/(root|wg|rcl)/ ){
-        &log( "Staying online because a user is logged in ($users)\n" );
-        next LOOP;
-    }
-
-    if( -f $file ){
-        $diff_time = time() - stat($file)->mtime;
-        print "DiffTime: $diff_time\n";
-        if( $diff_time < $touch_offset ){
-            &log( "Staying online because dif_time < touch_offset ($diff_time : $touch_offset)\n" );
-            next LOOP;
+    # This should be put into an external module, just testing here.
+    foreach my $disk( @{ $args->{disks} } ){
+        $logger->debug( "Testing $disk" );
+        my $rtn = `hdparm -C $disk`;
+        if( $rtn =~ m/drive state is:  active/s ){
+            $logger->debug( "Disk is active: $disk" );
+            $shutdown = 0;
         }
-    }else{
-        print "File does not exist...\n";
     }
-    &shutdown();
+    
+    if( $shutdown ){
+        &shutdown();
+    }
+    $logger->debug( "Sleeping $args->{loop_sleep}" );
+    sleep( $args->{loop_sleep} );
 }
+
 
 exit;
 
-sub log{
-    my $message = shift;
-    if( open( LOG, ">>$logfile" ) ){
-        print LOG $message;
-        close LOG;
-    }else{
-        print "Could not open Log: $!\n";
-    }
-}
-
 sub shutdown{
-    my $out;
-    $out .= "Shutting down at " . localtime( time ) . "\n";
-    $out .= "Uptime:\t" . uptime() . "\n";
-    $out .= "DiffTime:\t" . $diff_time . "\n" if( $diff_time );
-    $out .= "File does not exist\n" unless( -f $file );
-    print $out;
-    &log( $out );
-    `shutdown -h now`;
+    $logger->info( "Shutting down" );
+#    `shutdown -h now`;
 }
