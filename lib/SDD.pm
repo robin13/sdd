@@ -38,15 +38,56 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =cut
 
-sub function1 {
+sub new {
+    my $class = shift;
+    my %params = @_;
+
+    my $self = {};
+    
+    # TODO: RCL 2011-06-04 Better arg checking
+    foreach( keys( %params ) ){
+        $self->{$_} = $params{$_};
+    }
+    bless $self, $class;
+
+    return $self;
 }
 
-=head2 function2
+sub start {
+    my $self = shift;
+    my $logger = $self->{logger};
 
-=cut
+    sleep( $self->{startup_buffer} );
 
-sub function2 {
+    # TODO: RCL 2011-06-04 Load modules here, start threads, etc...
+    # This is just a proof of concept for hdparm
+    while( 1 ){
+        my $shutdown = 1;
+
+        # This should be put into an external module, just testing here.
+        foreach my $disk( @{ $self->{disks} } ){
+            $logger->debug( "Testing $disk" );
+            my $rtn = `hdparm -C $disk`;
+            if( $rtn =~ m/drive state is:  active/s ){
+                $logger->debug( "Disk is active: $disk" );
+                $shutdown = 0;
+            }
+        }
+
+        if( $shutdown ){
+            $logger->info( "Shutting down" );
+            if( $self->{test} ){
+                $logger->info( "Not really shutting down because running in test mode" );
+            }else{
+                `shutdown -h now`;
+                exit;
+            }
+        }
+        $logger->debug( "Sleeping $self->{loop_sleep}" );
+        sleep( $self->{loop_sleep} );
+    }
 }
+
 
 =head1 AUTHOR
 

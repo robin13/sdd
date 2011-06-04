@@ -7,6 +7,7 @@ WriteMakefile(
     AUTHOR              => q{Robin Clarke <perl@robinclarke.net>},
     VERSION_FROM        => 'lib/SDD.pm',
     ABSTRACT_FROM       => 'lib/SDD.pm',
+    EXE_FILES           => [ 'bin/sdd' ],
     ($ExtUtils::MakeMaker::VERSION >= 6.3002
       ? ('LICENSE'=> 'perl')
       : ()),

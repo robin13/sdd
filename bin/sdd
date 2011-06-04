@@ -21,6 +21,11 @@ Monitors varios system status and decides whether to shutdown the host or not.
 Log file path.
 Default: /var/log/sdd.log
 
+=item --log_level [DEBUG|INFO|WARN|ERROR]
+
+The log level to be used.
+Default: INFO
+
 =item --startup_buffer <Int>
 
 Number of seconds to sleep after starting before checking.
@@ -46,10 +51,9 @@ further.
 
 Be verbose - print log output to screen too.
 
-=item --log_level [DEBUG|INFO|WARN|ERROR]
+=item --show_config
 
-The log level to be used.
-Default: INFO
+Show the config used after loading the config file
 
 =back
 
@@ -69,6 +73,7 @@ use YAML::Any qw/Dump LoadFile/;
 use Getopt::Long;
 use Pod::Usage;
 use Log::Log4perl;
+use SDD;
 
 my $cli_args = {};
 my $result = GetOptions (
@@ -157,33 +162,11 @@ $logger->info( "Started" );
 
 $logger->info( "Sleeping $args->{startup_buffer} seconds before starting monitoring" );
 
-sleep( $args->{startup_buffer} );
+# Make logger accessible for SDD
+$args->{logger} = $logger;
 
-while( 1 ){
-    my $shutdown = 1;
+my $sdd = SDD->new( %{ $args } );
 
-    # This should be put into an external module, just testing here.
-    foreach my $disk( @{ $args->{disks} } ){
-        $logger->debug( "Testing $disk" );
-        my $rtn = `hdparm -C $disk`;
-        if( $rtn =~ m/drive state is:  active/s ){
-            $logger->debug( "Disk is active: $disk" );
-            $shutdown = 0;
-        }
-    }
-    
-    if( $shutdown ){
-        $logger->info( "Shutting down" );
-        if( $args->{test} ){
-            $logger->info( "Not really shutting down because running in test mode" );
-        }else{
-            `shutdown -h now`;
-            exit;
-        }
-    }
-    $logger->debug( "Sleeping $args->{loop_sleep}" );
-    sleep( $args->{loop_sleep} );
-}
-
+$sdd->start();
 
 exit;

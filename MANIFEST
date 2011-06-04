@@ -2,8 +2,10 @@ Changes
 MANIFEST
 Makefile.PL
 README
+examples/config.yml
 lib/SDD.pm
 t/00-load.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
+bin/sdd
