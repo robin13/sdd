@@ -111,7 +111,7 @@ sub new {
                     regex   => qr/^\d*$/,
                 },
                 monitor => {
-                    type  => ARRAYREF,
+                    type  => HASHREF,
                 },
             },
         # A little less verbose than Carp...
@@ -146,6 +146,24 @@ sub new {
     my $logger = Log::Log4perl->get_logger();
     $self->{logger} = $logger;
 
+    # Load the monitors
+    my %monitors;
+    foreach my $monitor_name( keys( %{ $params{monitor} } ) ){
+	eval{
+	    my $monitor_package = 'SDD::Monitor::' . $monitor_name;
+	    my $monitor_path = 'SDD/Monitor/' . $monitor_name . '.pm';
+	    require $monitor_path;
+
+	    $monitors{$monitor_name} = $monitor_package->new(
+		%{ $params{monitor}->{$monitor_name} },
+		logger => $logger );
+	};
+	if( $@ ){
+	    die( "Could not initialise monitor: $monitor_name\n$@\n" );
+	}
+    }
+    $self->{monitors} = \%monitors;
+
     return $self;
 }
 
@@ -163,33 +181,16 @@ sub start {
     $logger->info( "Sleeping $self->{params}->{startup_buffer} seconds before starting monitoring" );
 
     sleep( $self->{params}->{startup_buffer} );
+    
+    my $monitor = $self->{monitors}->{hdparm};
 
-    # TODO: RCL 2011-06-04 Load modules here, start threads, etc...
-    # This is just a proof of concept for hdparm
-    while( 1 ){
-        my $shutdown = 1;
-
-        # This should be put into an external module, just testing here.
-        foreach my $disk( @{ $self->{monitor}->{hdparam}->{disks} } ){
-            $logger->debug( "Testing $disk" );
-            my $rtn = `hdparm -C $disk`;
-            if( $rtn =~ m/drive state is:  active/s ){
-                $logger->debug( "Disk is active: $disk" );
-                $shutdown = 0;
-            }
-        }
-
-        if( $shutdown ){
-            $logger->info( "Shutting down" );
-            if( $self->{test} ){
-                $logger->info( "Not really shutting down because running in test mode" );
-            }else{
-                `shutdown -h now`;
-                exit;
-            }
-        }
-        $logger->debug( "Sleeping $self->{monitor}->{hdparam}->{loop_sleep}" );
-        sleep( $self->{monitor}->{hdparam}->{loop_sleep} );
+    $monitor->run();
+    $logger->info( "Shutting down" );
+    if( $self->{test} ){
+	$logger->info( "Not really shutting down because running in test mode" );
+    }else{
+#	`shutdown -h now`;
+	exit;
     }
 }
 

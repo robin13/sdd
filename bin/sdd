@@ -53,6 +53,10 @@ further.
 
 Be verbose - print log output to screen too.
 
+=item --test
+
+Run in test mode (don't actually shutdown)
+
 =back
 
 =head1 COPYRIGHT
@@ -80,6 +84,7 @@ my $result = GetOptions (
     "loop_sleep=i"     => \$cli_args{loop_sleep},
     "h|help"           => \$cli_args{help},
     "v|verbose"        => \$cli_args{verbose},
+    "test"             => \$cli_args{test},
     );
 
 # If something invalid defined, show usage
