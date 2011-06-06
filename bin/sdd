@@ -38,7 +38,9 @@ Default: 60
 
 =item --config
 
-Custom configuration.  Default in /etc/shutdown_manager.conf
+Custom configuration.  Default is in YAML format at
+
+  /etc/sdd.conf
 
 =item --help or -h
 
@@ -50,10 +52,6 @@ further.
 =item --verbose or -v
 
 Be verbose - print log output to screen too.
-
-=item --show_config
-
-Show the config used after loading the config file
 
 =back
 
@@ -69,22 +67,19 @@ Robin Clarke <perl@robinclarke.net>
 
 use strict;
 use warnings;
-use YAML::Any qw/Dump LoadFile/;
 use Getopt::Long;
 use Pod::Usage;
-use Log::Log4perl;
 use SDD;
 
-my $cli_args = {};
+my %cli_args;
 my $result = GetOptions (
-    "log_file=s"       => \$cli_args->{log_file},
-    "log_level=s"      => \$cli_args->{log_level},
-    "config=s"         => \$cli_args->{config},
-    "startup_buffer=i" => \$cli_args->{startup_buffer},
-    "loop_sleep=i"     => \$cli_args->{loop_sleep},
-    "h|help"           => \$cli_args->{help},
-    "show_config"      => \$cli_args->{show_config},
-    "v|verbose"        => \$cli_args->{verbose},
+    "log_file=s"       => \$cli_args{log_file},
+    "log_level=s"      => \$cli_args{log_level},
+    "config=s"         => \$cli_args{config},
+    "startup_buffer=i" => \$cli_args{startup_buffer},
+    "loop_sleep=i"     => \$cli_args{loop_sleep},
+    "h|help"           => \$cli_args{help},
+    "v|verbose"        => \$cli_args{verbose},
     );
 
 # If something invalid defined, show usage
@@ -95,78 +90,13 @@ if( ! $result ){
 }
 
 # Show help if requested
-if( $cli_args->{help} ){
+if( $cli_args{help} ){
     pod2usage( {
         -verbose => 2,
         } );
 }
 
-# Some sane defaults
-my $default_args = {
-    log_file       => '/var/log/sdd.log',
-    config         => '/etc/sdd.conf',
-    startup_buffer => 3600,
-    loop_sleep     => 60,
-    verbose        => 0,
-    log_level      => 'INFO',
-};
-
-
-# Take CLI args if defined, otherwise the defaults
-my $args = {};
-foreach( keys( %{ $default_args } ) ){
-    $args->{$_} = $cli_args->{$_} || $default_args->{$_};
-}
-
-if( $cli_args->{config} ){
-    if( not -f $cli_args->{config} ){
-        die( "Config file $cli_args->{config} not found" );
-    }
-    my $file_config = LoadFile( $cli_args->{config} );
-    %$args = (
-        %$args,
-        %$file_config,
-        );
-}
-
-# Dump the config
-if( $cli_args->{show_config} ){
-    print Dump( $args );
-    exit;
-}
-
-# Set up the logging
-my  $log4perl_conf = sprintf 'log4perl.rootLogger = %s, Logfile', $args->{log_level} || 'WARN';
-if( $args->{verbose} > 0 ){
-    $log4perl_conf .= q(, Screen
-log4perl.appender.Screen         = Log::Log4perl::Appender::Screen
-log4perl.appender.Screen.stderr  = 0
-log4perl.appender.Screen.layout   = Log::Log4perl::Layout::PatternLayout
-log4perl.appender.Screen.layout.ConversionPattern = [%d] %p %m%n
-    );
-
-}
-
-$log4perl_conf .= q(
-log4perl.appender.Logfile          = Log::Log4perl::Appender::File
-log4perl.appender.Logfile.layout   = Log::Log4perl::Layout::PatternLayout
-log4perl.appender.Logfile.layout.ConversionPattern = [%d] %p %m%n
-);
-$log4perl_conf .= sprintf "log4perl.appender.Logfile.filename = %s\n", $args->{log_file};
-
-# ... passed as a reference to init()
-Log::Log4perl::init( \$log4perl_conf );
-my $logger = Log::Log4perl->get_logger();
-
-$logger->info( "Started" );
-
-$logger->info( "Sleeping $args->{startup_buffer} seconds before starting monitoring" );
-
-# Make logger accessible for SDD
-$args->{logger} = $logger;
-
-my $sdd = SDD->new( %{ $args } );
-
+my $sdd = SDD->new( %cli_args );
 $sdd->start();
 
 exit;
