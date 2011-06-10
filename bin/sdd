@@ -26,9 +26,9 @@ Default: /var/log/sdd.log
 The log level to be used.
 Default: INFO
 
-=item --startup_buffer <Int>
+=item --sleep_before_run <Int>
 
-Number of seconds to sleep after starting before checking.
+Number of seconds to sleep before starting the monitors.
 Default: 3600
 
 =item --loop_sleep <Int>
@@ -77,14 +77,15 @@ use SDD;
 
 my %cli_args;
 my $result = GetOptions (
-    "log_file=s"       => \$cli_args{log_file},
-    "log_level=s"      => \$cli_args{log_level},
-    "config=s"         => \$cli_args{config},
-    "startup_buffer=i" => \$cli_args{startup_buffer},
-    "loop_sleep=i"     => \$cli_args{loop_sleep},
-    "h|help"           => \$cli_args{help},
-    "v|verbose"        => \$cli_args{verbose},
-    "test"             => \$cli_args{test},
+    "log_file=s"         => \$cli_args{log_file},
+    "log_level=s"        => \$cli_args{log_level},
+    "config=s"           => \$cli_args{config},
+    "sleep_before_run=i" => \$cli_args{sleep_before_run},
+    "loop_sleep=i"       => \$cli_args{loop_sleep},
+    "use_sudo"           => \$cli_args{use_sudo},
+    "h|help"             => \$cli_args{help},
+    "v|verbose"          => \$cli_args{verbose},
+    "test"               => \$cli_args{test},
     );
 
 # If something invalid defined, show usage

@@ -4,7 +4,9 @@ use warnings;
 use strict;
 use Params::Validate qw/:all/;
 use IPC::Run qw/timeout/;
+use YAML::Any;
 use User;
+use Log::Log4perl;
 
 =head1 NAME
 
@@ -23,11 +25,43 @@ our $VERSION = '0.01';
 
 Monitor hard disk spindown state using hdparm
 
+=head1 DESCRIPTION
+
+Tests the spin state of all the disks listed in "disks" every "loop_sleep".  When all disks
+are in spun down state, the flag "trigger_pending" is set.  If a further "trigger_time" seconds
+pass and all disks are still in a spun down state, the trigger is sent back to the parent
+process (return 1).
+
 =head1 METHODS
 
 =head2 new
 
-# TODO: RCL 2011-06-06 Document parameters
+=over 2
+
+=item loop_sleep <Int>
+
+How long to sleep between each test
+Default: 60 (1 minute)
+
+=item disks <ArrayRef>
+
+An array of disks to be tested.  e.g. /dev/sda
+Default: [ '/dev/sda' ]
+
+=item trigger_time <Int>
+
+The time to wait after discovering that all disks are spun down before returning (trigger a shutdown).
+Default: 3600 (1 hour)
+
+=item use_sudo 1|0
+
+Use sudo for hdparm
+
+   sudo hdparm -C /dev/sda
+
+Default: 0
+
+=back
 
 =cut
 
@@ -41,9 +75,15 @@ sub new {
         spec   => {
             loop_sleep   => {
 		regex    => qr/^\d*$/,
+                default  => 60,
 	    },
+            trigger_time => {
+                regex => qr/^\d*$/,
+                default => 3600,
+            },
 	    disks   => {
 		type   => ARRAYREF,
+                default => [ '/dev/sda' ],
 		callbacks => { 'Disks exist' => 
 		    sub{ 
 			my $disks_ref = shift();
@@ -54,28 +94,28 @@ sub new {
 		    },
 		},
 	    },
-	    logger => {
-		isa => 'Log::Log4perl::Logger',
-	    },
+            use_sudo => {
+                default => 0,
+                regex   => qr/^[1|0]$/,
+            },
         },
     );
     my $self = {};
     $self->{params} = \%params;
-    $self->{logger} = $params{logger};
-
-    # TODO: RCL 2011-06-07 This is broken - doesn't actually report user in all cases
-    $self->{is_root} = ( User->Login eq 'root' ? 1 : 0 );
-    $self->{logger}->info( "You are " . User->Login );
-    bless $self, $class;
     
-    $self->check_root();
+    $self->{trigger_pending} = 0;
+    
+    bless $self, $class;
+    my $logger = Log::Log4perl->get_logger();
+    $self->{logger} = $logger;
+    $logger->debug( "Monitor hdparm params:\n" . Dump( \%params ) );
 
     return $self;
 }
 
 =head2 run
 
-Run the Monitor
+Run the hdparm spindown Monitor
 
 =cut
 sub run {
@@ -84,42 +124,52 @@ sub run {
     my $logger = $self->{logger};
 
     $logger->info( "Monitor started running: hdparm" );
-
+    
+    # The loop
     while( 1 ){
         my $conditions_met = 1;
 
-        # This should be put into an external module, just testing here.
+        # Test each disk
         foreach my $disk( @{ $self->{params}->{disks} } ){
             $logger->debug( "Monitor hdparm testing $disk" );
-	    $self->check_root();
 	    my @cmd = ( qw/hdparm -C/, $disk );
-	    my( $in, $out, $err );
-	    if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, timeout( 10 ) ) ){
-		die "Could not run '" . join( ' ', @cmd ) . "': $!";
+            if( $self->{params}->{use_sudo} ){
+                unshift( @cmd, 'sudo' );
+            }
+            $logger->debug( "Monitor hdparm CMD: " . join( ' ', @cmd ) );
+            my( $in, $out, $err );
+	    if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, timeout( 10 ) ) ) {
+		$logger->warn( "Could not run '" . join( ' ', @cmd ) . "': $!" );
 	    }
-	    if( $err ){
+	    if( $err ) {
 		$logger->error( "Monitor hdparm: $err" );
+                $conditions_met = 0;
 	    }
-
+            
+            # If any of the disks are active, the conditions for trigger are not met
             if( $out =~ m/drive state is:  active/s ){
                 $logger->debug( "Monitor hdparm sees disk is active: $disk" );
                 $conditions_met = 0;
             }
         }
 
-        if( $conditions_met ){
-            $logger->info( "Monitor hdparm found all disks spun down" );
-	    return 1;
+        if( $conditions_met ) {
+            # All disks are spun down! Set the trigger_pending time.
+            $self->{trigger_pending} = $self->{trigger_pending} || time();
+            if( $self->{trigger_pending} and 
+                ( time() - $self->{trigger_pending} ) >=  $self->{params}->{trigger_time} ){
+                # ... and the trigger was set, and time has run out: time to return!
+                $logger->info( "Monitor hdparm trigger time reached after $self->{params}->{trigger_time}" );
+                return 1;
+            }
+
+            $logger->info( "Monitor hdparm found all disks spun down: trigger pending." );
+       }else{
+            # Conditions not met - reset the trigger incase it was previously set.
+            $self->{trigger_pending} = 0;
         }
         $logger->debug( "Monitor hdparm sleeping $self->{params}->{loop_sleep}" );
         sleep( $self->{params}->{loop_sleep} );
-    }
-}
-
-sub check_root {
-    my $self = shift;
-    if( not $self->{is_root} ){
-	$self->{logger}->warn( "You are not root. Monitor hdparm will probably not work..." );
     }
 }
 

@@ -7,6 +7,8 @@ use YAML::Any qw/Dump LoadFile/;
 use Log::Log4perl;
 use Params::Validate qw/:all/;
 use File::Basename;
+use IPC::Run;
+use User;
 
 =head1 NAME
 
@@ -35,7 +37,58 @@ This is the core of the shutdown daemon script.
 
 Create new instance of SDD
 
-# TODO: RCL 2011-06-06 Document parameters
+=head3 PARAMS
+
+=over 2
+
+=item log_file <Str>
+
+Path to log file
+Default: /var/log/sdd.log'
+
+=item log_level <Str>
+
+Logging level (from Log::Log4perl).  Valid are: DEBUG, INFO, WARN, ERROR
+Default: INFO
+
+=item verbose 1|0
+
+If enabled, logging info will be printed to screen as well
+Default: 0
+
+=item test 1|0
+
+If enabled shutdown will not actually be executed.
+Default: 0
+
+=item sleep_before_run <Int>
+
+Time in seconds to sleep before running the monitors.
+e.g. to give the system time to boot, and not to shut down before users
+have started using the freshly started system.
+Default: 3600
+
+=item exit_after_trigger 1|0
+
+If enabled will exit the application after a monitor has triggered.
+Normally it is a moot point, because if a monitor has triggered, then a shutdown
+is initialised, so the script will stop running anyway.
+Default: 0
+
+=item monitor HASHREF
+
+A hash of monitor definitions.  Each hash key must map to a Monitor module, and
+contain a hash with the parameters for the module.
+
+=item use_sudo 1|0
+
+Use sudo for shutdown
+
+   sudo shutdown -h now
+
+Default: 0
+
+=back
 
 =cut
 
@@ -106,9 +159,17 @@ sub new {
                     default => 0,
                     regex   => qr/^[1|0]$/,
                 },
-                 startup_buffer => {
+                sleep_before_run => {
                     default => 3600,
                     regex   => qr/^\d*$/,
+                },
+                exit_after_trigger => {
+                    default => 0,
+                    regex   => qr/^[1|0]$/,
+                },
+                use_sudo => {
+                    default => 0,
+                    regex   => qr/^[1|0]$/,
                 },
                 monitor => {
                     type  => HASHREF,
@@ -145,6 +206,14 @@ sub new {
     Log::Log4perl::init( \$log4perl_conf );
     my $logger = Log::Log4perl->get_logger();
     $self->{logger} = $logger;
+    
+
+    $self->{is_root} = ( User->Login eq 'root' ? 1 : 0 );
+    $self->{logger}->info( "You are " . User->Login );
+
+    if( not $self->{is_root} ){
+	$self->{logger}->warn( "You are not root. SDD will probably not work..." );
+    }
 
     # Load the monitors
     my %monitors;
@@ -154,9 +223,7 @@ sub new {
 	    my $monitor_path = 'SDD/Monitor/' . $monitor_name . '.pm';
 	    require $monitor_path;
 
-	    $monitors{$monitor_name} = $monitor_package->new(
-		%{ $params{monitor}->{$monitor_name} },
-		logger => $logger );
+	    $monitors{$monitor_name} = $monitor_package->new( %{ $params{monitor}->{$monitor_name} } );
 	};
 	if( $@ ){
 	    die( "Could not initialise monitor: $monitor_name\n$@\n" );
@@ -178,9 +245,9 @@ sub start {
 
     $logger->info( "Started" );
 
-    $logger->info( "Sleeping $self->{params}->{startup_buffer} seconds before starting monitoring" );
+    $logger->info( "Sleeping $self->{params}->{sleep_before_run} seconds before starting monitoring" );
 
-    sleep( $self->{params}->{startup_buffer} );
+    sleep( $self->{params}->{sleep_before_run} );
     
     my $monitor = $self->{monitors}->{hdparm};
 
@@ -189,8 +256,21 @@ sub start {
     if( $self->{test} ){
 	$logger->info( "Not really shutting down because running in test mode" );
     }else{
-#	`shutdown -h now`;
-	exit;
+        # Do the actual shutdown
+        my @cmd = qw/shutdown -h now/;
+        if( $self->{params}->{use_sudo} ){
+            unshift( @cmd, 'sudo' );
+        }
+        my( $in, $out, $err );
+	if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, timeout( 10 ) ) ) {
+	    die "Could not run '" . join( ' ', @cmd ) . "': $!";
+	}
+	if( $err ) {
+	    $logger->error( "Monitor hdparm could not shutdown: $err" );
+	}
+        if( $self->{params}->{exit_after_trigger} ){
+            exit;
+        }
     }
 }
 
