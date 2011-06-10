@@ -1,0 +1,10 @@
+Configuration:
+
+Copy etc/sdd.conf to your /etc/ directory and modify it to match your system
+
+
+Automatic start:
+
+Copy init.d/sdd to your /etc/init.d directory and then
+
+update-rc.d sdd defaults
