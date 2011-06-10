@@ -40,6 +40,11 @@ To install this module, run the following commands:
 	make test
 	make install
 
+For Debian/Ubuntu:
+Copy examples/etc/sdd.conf to your /etc directory and modify it for your system
+Copy examples/init.d/sdd to your /etc/init.d directory and run
+update-rc.d sdd defaults
+        
 SUPPORT AND DOCUMENTATION
 
 https://github.com/robin13/sdd
