@@ -165,6 +165,9 @@ sub run {
 
             $logger->info( "Monitor hdparm found all disks spun down: trigger pending." );
        }else{
+            if( $self->{trigger_pending} ){
+                $logger->info( "Monitor hdparm trigger time being reset because of disk activity" );
+            }
             # Conditions not met - reset the trigger incase it was previously set.
             $self->{trigger_pending} = 0;
         }
