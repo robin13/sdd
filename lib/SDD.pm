@@ -88,6 +88,11 @@ Use sudo for shutdown
 
 Default: 0
 
+=item shutdown_binary <Str>
+
+The full path to the shutdown binary
+Default: /sbin/shutdown
+
 =back
 
 =cut
@@ -171,6 +176,13 @@ sub new {
                     default => 0,
                     regex   => qr/^[1|0]$/,
                 },
+                shutdown_binary => {
+                    default => '/sbin/shutdown',
+                    type => 'SCALAR',
+                    callbacks => {
+                        'Shutdown binary exists' => sub{ -x shift() },
+                    },
+                }, 
                 monitor => {
                     type  => HASHREF,
                 },
@@ -257,13 +269,13 @@ sub start {
 	$logger->info( "Not really shutting down because running in test mode" );
     }else{
         # Do the actual shutdown
-        my @cmd = qw/shutdown -h now/;
+        my @cmd = ( $self->{params}->{shutdown_binary}, '-h', 'now' );
         if( $self->{params}->{use_sudo} ){
             unshift( @cmd, 'sudo' );
         }
         my( $in, $out, $err );
-	if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, timeout( 10 ) ) ) {
-	    die "Could not run '" . join( ' ', @cmd ) . "': $!";
+	if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
+	    $logger->error( "Could not run '" . join( ' ', @cmd ) . "': $!" );
 	}
 	if( $err ) {
 	    $logger->error( "Monitor hdparm could not shutdown: $err" );

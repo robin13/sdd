@@ -3,7 +3,7 @@ package SDD::Monitor::hdparm;
 use warnings;
 use strict;
 use Params::Validate qw/:all/;
-use IPC::Run qw/timeout/;
+use IPC::Run;
 use YAML::Any;
 use User;
 use Log::Log4perl;
@@ -138,7 +138,7 @@ sub run {
             }
             $logger->debug( "Monitor hdparm CMD: " . join( ' ', @cmd ) );
             my( $in, $out, $err );
-	    if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, timeout( 10 ) ) ) {
+	    if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
 		$logger->warn( "Could not run '" . join( ' ', @cmd ) . "': $!" );
 	    }
 	    if( $err ) {
