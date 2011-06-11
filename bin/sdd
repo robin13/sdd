@@ -57,6 +57,10 @@ Be verbose - print log output to screen too.
 
 Run in test mode (don't actually shutdown)
 
+=item --version
+
+Print out the version and exit
+
 =back
 
 =head1 COPYRIGHT
@@ -85,6 +89,7 @@ my $result = GetOptions (
     "use_sudo"           => \$cli_args{use_sudo},
     "h|help"             => \$cli_args{help},
     "v|verbose"          => \$cli_args{verbose},
+    "version"            => \$cli_args{version},
     "test"               => \$cli_args{test},
     );
 
@@ -100,6 +105,11 @@ if( $cli_args{help} ){
     pod2usage( {
         -verbose => 2,
         } );
+}
+
+if( $cli_args{version} ){
+    print $SDD::VERSION . "\n";
+    exit;
 }
 
 my $sdd = SDD->new( %cli_args );
