@@ -14,11 +14,11 @@ SDD::Monitor::hdparm - a hdparm specific monitor
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 
 =head1 SYNOPSIS
@@ -62,6 +62,18 @@ Use sudo for hdparm
 Default: 0
 
 =back
+
+=head3 Example configuration
+
+    monitor:
+      hdparm:
+        trigger_time: 1800
+        loop_sleep: 1
+        use_sudo: 0
+        disks: 
+          - /dev/sdb
+          - /dev/sdc
+          - /dev/sdd
 
 =cut
 

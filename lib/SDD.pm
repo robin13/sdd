@@ -2,7 +2,6 @@ package SDD;
 
 use warnings;
 use strict;
-use threads;
 use YAML::Any qw/Dump LoadFile/;
 use Log::Log4perl;
 use Params::Validate qw/:all/;
@@ -16,11 +15,11 @@ SDD - Shutdown Daemon
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 
 =head1 SYNOPSIS
@@ -94,6 +93,24 @@ The full path to the shutdown binary
 Default: /sbin/shutdown
 
 =back
+
+=head3 Example (YAML formatted) configuration file
+
+    ---
+    log_level: INFO
+    log_file: /var/log/sdd.log
+    shutdown_binary: /sbin/shutdown
+    exit_after_trigger: 0
+    sleep_before_run: 30
+    verbose: 0
+    use_sudo: 0
+    monitor:
+      hdparm:
+        loop_sleep: 60
+        disks: 
+          - /dev/sdb
+          - /dev/sdc
+          - /dev/sdd
 
 =cut
 
