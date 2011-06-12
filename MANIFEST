@@ -1,6 +1,7 @@
 MANIFEST
 Makefile.PL
 README
+ignore.txt
 examples/etc/sdd.conf
 examples/init.d/sdd
 lib/SDD.pm
@@ -8,5 +9,6 @@ lib/SDD/Monitor/hdparm.pm
 t/00-load.t
 t/manifest.t
 t/pod-coverage.t
+t/boilerplate.t
 t/pod.t
 bin/sdd

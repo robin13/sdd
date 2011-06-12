@@ -44,11 +44,8 @@ TODO: {
     "'version information here'"  => qr/to provide version information/,
   );
 
-  not_in_file_ok(Changes =>
-    "placeholder date/time"       => qr(Date/time)
-  );
-
   module_boilerplate_ok('lib/SDD.pm');
+  module_boilerplate_ok('lib/SDD/Monitor/hdparm.pm');
 
 
 }
