@@ -14,11 +14,11 @@ SDD::Monitor::hdparm - a hdparm specific monitor
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 
 =head1 SYNOPSIS
@@ -41,39 +41,42 @@ process (return 1).
 =item loop_sleep <Int>
 
 How long to sleep between each test
+
 Default: 60 (1 minute)
 
 =item disks <ArrayRef>
 
 An array of disks to be tested.  e.g. /dev/sda
+
 Default: [ '/dev/sda' ]
 
 =item trigger_time <Int>
 
 The time to wait after discovering that all disks are spun down before returning (trigger a shutdown).
+
 Default: 3600 (1 hour)
 
 =item use_sudo 1|0
 
 Use sudo for hdparm
-
-   sudo hdparm -C /dev/sda
+ 
+sudo hdparm -C /dev/sda
 
 Default: 0
 
 =back
 
 =head3 Example configuration
-
-    monitor:
-      hdparm:
-        trigger_time: 1800
-        loop_sleep: 1
-        use_sudo: 0
-        disks: 
-          - /dev/sdb
-          - /dev/sdc
-          - /dev/sdd
+ 
+monitor:
+  hdparm:
+    trigger_time: 1800
+    loop_sleep: 1
+    use_sudo: 0
+    disks: 
+      - /dev/sdb
+      - /dev/sdc
+      - /dev/sdd
 
 =cut
 

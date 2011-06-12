@@ -15,20 +15,20 @@ SDD - Shutdown Daemon
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 
 =head1 SYNOPSIS
 
 This is the core of the shutdown daemon script.
-
-    use SDD;
-    my $sdd = SDD->new( %args );
-    $sdd->start();
+ 
+use SDD;
+my $sdd = SDD->new( %args );
+$sdd->start();
 
 =head1 METHODS
 
@@ -43,21 +43,25 @@ Create new instance of SDD
 =item log_file <Str>
 
 Path to log file
+
 Default: /var/log/sdd.log'
 
 =item log_level <Str>
 
 Logging level (from Log::Log4perl).  Valid are: DEBUG, INFO, WARN, ERROR
+
 Default: INFO
 
 =item verbose 1|0
 
 If enabled, logging info will be printed to screen as well
+
 Default: 0
 
 =item test 1|0
 
 If enabled shutdown will not actually be executed.
+
 Default: 0
 
 =item sleep_before_run <Int>
@@ -65,6 +69,7 @@ Default: 0
 Time in seconds to sleep before running the monitors.
 e.g. to give the system time to boot, and not to shut down before users
 have started using the freshly started system.
+
 Default: 3600
 
 =item exit_after_trigger 1|0
@@ -72,6 +77,7 @@ Default: 3600
 If enabled will exit the application after a monitor has triggered.
 Normally it is a moot point, because if a monitor has triggered, then a shutdown
 is initialised, so the script will stop running anyway.
+
 Default: 0
 
 =item monitor HASHREF
@@ -82,35 +88,36 @@ contain a hash with the parameters for the module.
 =item use_sudo 1|0
 
 Use sudo for shutdown
-
-   sudo shutdown -h now
+ 
+sudo shutdown -h now
 
 Default: 0
 
 =item shutdown_binary <Str>
 
 The full path to the shutdown binary
+
 Default: /sbin/shutdown
 
 =back
 
 =head3 Example (YAML formatted) configuration file
-
-    ---
-    log_level: INFO
-    log_file: /var/log/sdd.log
-    shutdown_binary: /sbin/shutdown
-    exit_after_trigger: 0
-    sleep_before_run: 30
-    verbose: 0
-    use_sudo: 0
-    monitor:
-      hdparm:
-        loop_sleep: 60
-        disks: 
-          - /dev/sdb
-          - /dev/sdc
-          - /dev/sdd
+ 
+---
+log_level: INFO
+log_file: /var/log/sdd.log
+shutdown_binary: /sbin/shutdown
+exit_after_trigger: 0
+sleep_before_run: 30
+verbose: 0
+use_sudo: 0
+monitor:
+  hdparm:
+    loop_sleep: 60
+    disks: 
+      - /dev/sdb
+      - /dev/sdc
+      - /dev/sdd
 
 =cut
 
