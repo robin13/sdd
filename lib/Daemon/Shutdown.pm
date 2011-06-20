@@ -1,4 +1,4 @@
-package SDD;
+package Daemon::Shutdown;
 
 use warnings;
 use strict;
@@ -11,30 +11,30 @@ use User;
 
 =head1 NAME
 
-SDD - Shutdown Daemon
+Daemon::Shutdown - A Shutdown Daemon
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 =cut
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 
 =head1 SYNOPSIS
 
 This is the core of the shutdown daemon script.
  
-use SDD;
-my $sdd = SDD->new( %args );
+use Daemon::Shutdown;
+my $sdd = Daemon::Shutdown->new( %args );
 $sdd->start();
 
 =head1 METHODS
 
 =head2 new
 
-Create new instance of SDD
+Create new instance of Daemon::Shutdown
 
 =head3 PARAMS
 
@@ -255,8 +255,8 @@ sub new {
     my %monitors;
     foreach my $monitor_name( keys( %{ $params{monitor} } ) ){
 	eval{
-	    my $monitor_package = 'SDD::Monitor::' . $monitor_name;
-	    my $monitor_path = 'SDD/Monitor/' . $monitor_name . '.pm';
+	    my $monitor_package = 'Daemon::Shutdown::Monitor::' . $monitor_name;
+	    my $monitor_path = 'Daemon/Shutdown/Monitor/' . $monitor_name . '.pm';
 	    require $monitor_path;
 
 	    $monitors{$monitor_name} = $monitor_package->new( %{ $params{monitor}->{$monitor_name} } );
@@ -317,16 +317,13 @@ Robin Clarke, C<< <perl at robinclarke.net> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-sdd at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=SDD>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
-
+Please report any bugs or feature requests to L<https://github.com/robin13/sdd>
 
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc SDD
+    perldoc Daemon::Shutdown
 
 
 You can also look for information at:
@@ -339,7 +336,7 @@ L<https://github.com/robin13/sdd>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/SDD/>
+L<http://search.cpan.org/dist/Daemon/Shutdown/>
 
 =back
 
@@ -360,4 +357,4 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-1; # End of SDD
+1; # End of Daemon::Shutdown

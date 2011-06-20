@@ -3,10 +3,10 @@ use warnings;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-    NAME                => 'SDD',
+    NAME                => 'Daemon::Shutdown',
     AUTHOR              => q{Robin Clarke <perl@robinclarke.net>},
-    VERSION_FROM        => 'lib/SDD.pm',
-    ABSTRACT_FROM       => 'lib/SDD.pm',
+    VERSION_FROM        => 'lib/Daemon/Shutdown.pm',
+    ABSTRACT_FROM       => 'lib/Daemon/Shutdown.pm',
     EXE_FILES           => [ 'bin/sdd' ],
     ($ExtUtils::MakeMaker::VERSION >= 6.3002
       ? ('LICENSE'=> 'perl')
@@ -24,5 +24,5 @@ WriteMakefile(
 	'User'             => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean               => { FILES => 'SDD-*' },
+    clean               => { FILES => 'Daemon-Shutdown-*' },
 );

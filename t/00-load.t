@@ -3,8 +3,8 @@
 use Test::More tests => 1;
 
 BEGIN {
-    use_ok( 'SDD' ) || print "Bail out!
+    use_ok( 'Daemon::Shutdown' ) || print "Bail out!
 ";
 }
 
-diag( "Testing SDD $SDD::VERSION, Perl $], $^X" );
+diag( "Testing Daemon::Shutdown $Daemon::Shutdown::VERSION, Perl $], $^X" );

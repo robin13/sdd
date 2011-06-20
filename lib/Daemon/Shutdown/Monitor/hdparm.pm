@@ -1,4 +1,4 @@
-package SDD::Monitor::hdparm;
+package Daemon::Shutdown::Monitor::hdparm;
 
 use warnings;
 use strict;
@@ -10,15 +10,15 @@ use Log::Log4perl;
 
 =head1 NAME
 
-SDD::Monitor::hdparm - a hdparm specific monitor
+Daemon::Shutdown::Monitor::hdparm - a hdparm specific monitor
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 =cut
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 
 =head1 SYNOPSIS
@@ -208,4 +208,4 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-1; # End of SDD
+1; # End of Daemon::Shutdown::Monitor::hdparm

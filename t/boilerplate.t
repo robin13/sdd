@@ -44,8 +44,8 @@ TODO: {
     "'version information here'"  => qr/to provide version information/,
   );
 
-  module_boilerplate_ok('lib/SDD.pm');
-  module_boilerplate_ok('lib/SDD/Monitor/hdparm.pm');
+  module_boilerplate_ok('lib/Daemon/Shutdown.pm');
+  module_boilerplate_ok('lib/Daemon/Shutdown/Monitor/hdparm.pm');
 
 
 }

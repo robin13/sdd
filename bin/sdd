@@ -77,7 +77,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Pod::Usage;
-use SDD;
+use Daemon::Shutdown;
 
 my %cli_args;
 my $result = GetOptions (
@@ -108,11 +108,11 @@ if( $cli_args{help} ){
 }
 
 if( $cli_args{version} ){
-    print $SDD::VERSION . "\n";
+    print $Daemon::Shutdown::VERSION . "\n";
     exit;
 }
 
-my $sdd = SDD->new( %cli_args );
+my $sdd = Daemon::Shutdown->new( %cli_args );
 $sdd->start();
 
 exit;

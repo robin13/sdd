@@ -4,8 +4,8 @@ README
 ignore.txt
 examples/etc/sdd.conf
 examples/init.d/sdd
-lib/SDD.pm
-lib/SDD/Monitor/hdparm.pm
+lib/Daemon/Shutdown.pm
+lib/Daemon/Shutdown/Monitor/hdparm.pm
 t/00-load.t
 t/manifest.t
 t/pod-coverage.t
