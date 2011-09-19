@@ -202,7 +202,7 @@ sub new {
                 },
                 shutdown_binary => {
                     default => '/sbin/shutdown',
-                    type => 'SCALAR',
+                    type => SCALAR,
                     callbacks => {
                         'Shutdown binary exists' => sub{ -x shift() },
                     },
