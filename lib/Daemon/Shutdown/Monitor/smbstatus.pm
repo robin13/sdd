@@ -5,7 +5,6 @@ use strict;
 use Params::Validate qw/:all/;
 use IPC::Run;
 use YAML::Any;
-use User;
 use Log::Log4perl;
 
 =head1 NAME
