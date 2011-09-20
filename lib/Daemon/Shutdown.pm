@@ -201,15 +201,16 @@ sub new {
                     regex   => qr/^[1|0]$/,
                 },
                 shutdown_binary => {
-                    default => '/sbin/shutdown -h now',
-                    type => SCALAR,
+                    default   => '/sbin/shutdown',
+                    type      => SCALAR,
                     callbacks => {
-                        'Shutdown binary exists' => sub{
-                            my @cmd = split '\s', shift();
-                            return -x $cmd[0];
-                         },
+                        'Shutdown binary exists' => sub{ -x shift() },
                     },
-                }, 
+                },
+                shutdown_args => {
+                    default => [qw/-h now/],
+                    type    => ARRAYREF,
+                },
                 monitor => {
                     type  => HASHREF,
                 },
@@ -281,8 +282,7 @@ Start the shutdown daemon
 sub start {
     my $self = shift;
     my $logger = $self->{logger};
-    my @cmd = split '\s', $self->{params}->{shutdown_binary};
-    print Dump(\@cmd);
+   
     $logger->info( "Started" );
 
     $logger->info( "Sleeping $self->{params}->{sleep_before_run} seconds before starting monitoring" );
@@ -299,7 +299,7 @@ sub start {
 	        $logger->info( "Not really shutting down because running in test mode" );
         }else{
             # Do the actual shutdown
-            my @cmd = split '\s', $self->{params}->{shutdown_binary};
+            my @cmd = ($self->{params}->{shutdown_binary}, @{ $self->{params}->{shutdown_args} });
             if( $self->{params}->{use_sudo} ){
                 unshift( @cmd, 'sudo' );
             }

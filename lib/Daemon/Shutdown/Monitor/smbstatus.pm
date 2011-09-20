@@ -26,7 +26,7 @@ Monitor samba file locks
 
 =head1 DESCRIPTION
 
-Uses <smbstatus> to look for locked files every "loop_sleep".  If no files are locked,
+Uses C<smbstatus> to look for locked files every "loop_sleep".  If no files are locked,
 the flag "trigger_pending" is set.  If a further "trigger_time" seconds
 pass and all disks are still in a spun down state, the trigger is sent back to the parent
 process (return 1).
@@ -48,6 +48,8 @@ Default: 60 (1 minute)
 The time to wait after discovering that all disks are spun down before returning (trigger a shutdown).
 
 Default: 3600 (1 hour)
+
+=back
 
 =head3 Example configuration
  
@@ -106,18 +108,18 @@ sub run {
         my $conditions_met = 1;
 
         # look for locks
-	    my @cmd = ( qw/smbstatus -L/ );
+        my @cmd = ( qw/smbstatus -L/ );
         $logger->debug( "Monitor smbstatus CMD: " . join( ' ', @cmd ) );
         
         my( $in, $out, $err );
-	    if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
-		    $logger->warn( "Could not run '" . join( ' ', @cmd ) . "': $!" );
-	    }
+        if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
+            $logger->warn( "Could not run '" . join( ' ', @cmd ) . "': $!" );
+        }
 	    
-	    if( $err ) {
-		    $logger->error( "Monitor smbstatus: $err" );
+        if( $err ) {
+            $logger->error( "Monitor smbstatus: $err" );
             $conditions_met = 0;
-	    }
+        }
             
         # If are active locks, the conditions for trigger are not met
         # XXX other languages?
@@ -154,7 +156,7 @@ sub run {
 
 Robin Clarke, C<< <perl at robinclarke.net> >>
 
-Ioan Rogers, C<< <ioan.rogers at gmail.com > >>
+Ioan Rogers, C<< <ioan.rogers at gmail.com> >>
 
 =head1 LICENSE AND COPYRIGHT
 
