@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+
 =head1 NAME
 
 sdd - Shutdown Daemon
@@ -80,7 +81,7 @@ use Pod::Usage;
 use Daemon::Shutdown;
 
 my %cli_args;
-my $result = GetOptions (
+my $result = GetOptions(
     "log_file=s"         => \$cli_args{log_file},
     "log_level=s"        => \$cli_args{log_level},
     "config=s"           => \$cli_args{config},
@@ -91,23 +92,19 @@ my $result = GetOptions (
     "v|verbose"          => \$cli_args{verbose},
     "version"            => \$cli_args{version},
     "test"               => \$cli_args{test},
-    );
+);
 
 # If something invalid defined, show usage
-if( ! $result ){
-    pod2usage( {
-        -verbose => 1,
-        } );
+if ( not $result ) {
+    pod2usage( { -verbose => 1, } );
 }
 
 # Show help if requested
-if( $cli_args{help} ){
-    pod2usage( {
-        -verbose => 2,
-        } );
+if ( $cli_args{help} ) {
+    pod2usage( { -verbose => 2, } );
 }
 
-if( $cli_args{version} ){
+if ( $cli_args{version} ) {
     print $Daemon::Shutdown::VERSION . "\n";
     exit;
 }

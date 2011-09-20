@@ -19,7 +19,6 @@ Version 0.02
 
 our $VERSION = '0.02';
 
-
 =head1 SYNOPSIS
 
 Monitor samba file locks
@@ -61,28 +60,28 @@ monitor:
 =cut
 
 sub new {
-    my $class = shift;
+    my $class  = shift;
     my %params = @_;
-    
+
     # Validate the config file
     %params = validate_with(
         params => \%params,
         spec   => {
-            loop_sleep   => {
-		        regex    => qr/^\d*$/,
-                default  => 60,
-	        },
+            loop_sleep => {
+                regex   => qr/^\d*$/,
+                default => 60,
+            },
             trigger_time => {
-                regex => qr/^\d*$/,
+                regex   => qr/^\d*$/,
                 default => 3600,
             },
         },
     );
     my $self = {};
     $self->{params} = \%params;
-    
+
     $self->{trigger_pending} = 0;
-    
+
     bless $self, $class;
     my $logger = Log::Log4perl->get_logger();
     $self->{logger} = $logger;
@@ -96,9 +95,10 @@ sub new {
 Run the smbstatus lock monitor
 
 =cut
+
 sub run {
     my $self = shift;
-    
+
     my $logger = $self->{logger};
 
     $logger->info( "Monitor started running: smbstatus" );
@@ -107,43 +107,46 @@ sub run {
     # look for locks
     my @cmd = ( qw/smbstatus -L/ );
     $logger->debug( "Monitor smbstatus CMD: " . join( ' ', @cmd ) );
-        
-    my( $in, $out, $err );
-    if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
+
+    my ( $in, $out, $err );
+    if ( not IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
         $logger->warn( "Could not run '" . join( ' ', @cmd ) . "': $!" );
     }
-	    
-    if( $err ) {
+
+    if ( $err ) {
         $logger->error( "Monitor smbstatus: $err" );
         $conditions_met = 0;
     }
-            
+
     # If are active locks, the conditions for trigger are not met
     # XXX other languages?
-    if( $out =~ m/Locked files:/ ){
+    if ( $out =~ m/Locked files:/ ) {
         $logger->debug( "Monitor smbstatus sees active file locks" );
         $conditions_met = 0;
     }
 
-    if( $conditions_met ) {
+    if ( $conditions_met ) {
         $self->{trigger_pending} = $self->{trigger_pending} || time();
 
-        if( $self->{trigger_pending} and 
-            ( time() - $self->{trigger_pending} ) >=  $self->{params}->{trigger_time} ) {
+        if ( $self->{trigger_pending}
+            and ( time() - $self->{trigger_pending} ) >= $self->{params}->{trigger_time} )
+        {
+
             # ... and the trigger was set, and time has run out: time to return!
             $logger->info( "Monitor smbstatus trigger time reached after $self->{params}->{trigger_time}" );
             return 1;
         }
 
         $logger->info( "Monitor smbstatus found no locks: trigger pending." );
-    }else{
-        if( $self->{trigger_pending} ){
+    } else {
+        if ( $self->{trigger_pending} ) {
             $logger->info( "Monitor smbstatus trigger time being reset because of new file locks" );
         }
+
         # Conditions not met - reset the trigger incase it was previously set.
         $self->{trigger_pending} = 0;
     }
-    
+
     return 0;
 }
 
@@ -165,4 +168,4 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-1; # End of Daemon::Shutdown::Monitor::smbstatus
+1;    # End of Daemon::Shutdown::Monitor::smbstatus
