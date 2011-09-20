@@ -13,11 +13,11 @@ Daemon::Shutdown::Monitor::smbstatus - check for samba locks
 
 =head1 VERSION
 
-Version 0.06
+Version 0.02
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.02';
 
 
 =head1 SYNOPSIS

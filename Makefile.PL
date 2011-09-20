@@ -22,6 +22,7 @@ WriteMakefile(
         'Test::More'       => 0,
 	'YAML::Any'        => 0,
 	'User'             => 0,
+	'AnyEvent'	   => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Daemon-Shutdown-*' },
