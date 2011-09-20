@@ -201,12 +201,15 @@ sub new {
                     regex   => qr/^[1|0]$/,
                 },
                 shutdown_binary => {
-                    default => '/sbin/shutdown',
-                    type => 'SCALAR',
+                    default   => '/sbin/poweroff',
+                    type      => SCALAR,
                     callbacks => {
                         'Shutdown binary exists' => sub{ -x shift() },
                     },
-                }, 
+                },
+                shutdown_args => {
+                    type    => ARRAYREF,
+                },
                 monitor => {
                     type  => HASHREF,
                 },
@@ -278,38 +281,42 @@ Start the shutdown daemon
 sub start {
     my $self = shift;
     my $logger = $self->{logger};
-
+   
     $logger->info( "Started" );
 
     $logger->info( "Sleeping $self->{params}->{sleep_before_run} seconds before starting monitoring" );
 
     sleep( $self->{params}->{sleep_before_run} );
     
-    my $monitor = $self->{monitors}->{hdparm};
+    foreach my $monitor_name ( keys %{ $self->{monitors} } ) {
+        my $monitor = $self->{monitors}->{$monitor_name};
+        
+        $monitor->run();
+    
+        $logger->info( "Shutting down" );
+        if( $self->{test} ){
+	        $logger->info( "Not really shutting down because running in test mode" );
+        }else{
+            # Do the actual shutdown
+            my @cmd = ($self->{params}->{shutdown_binary}, @{ $self->{params}->{shutdown_args} });
+            if( $self->{params}->{use_sudo} ){
+                unshift( @cmd, 'sudo' );
+            }
 
-    $monitor->run();
-    $logger->info( "Shutting down" );
-    if( $self->{test} ){
-	$logger->info( "Not really shutting down because running in test mode" );
-    }else{
-        # Do the actual shutdown
-        my @cmd = ( $self->{params}->{shutdown_binary}, '-h', 'now' );
-        if( $self->{params}->{use_sudo} ){
-            unshift( @cmd, 'sudo' );
-        }
-        my( $in, $out, $err );
-	if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
-	    $logger->error( "Could not run '" . join( ' ', @cmd ) . "': $!" );
-	}
-	if( $err ) {
-	    $logger->error( "Monitor hdparm could not shutdown: $err" );
-	}
-        if( $self->{params}->{exit_after_trigger} ){
-            exit;
+            my( $in, $out, $err );
+            if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
+        	    $logger->error( "Could not run '" . join( ' ', @cmd ) . "': $!" );
+	        }
+        	if( $err ) {
+	            $logger->error( "Could not shutdown: $err" );
+        	}
+            
+            if( $self->{params}->{exit_after_trigger} ){
+                exit;
+            }
         }
     }
 }
-
 
 =head1 AUTHOR
 
