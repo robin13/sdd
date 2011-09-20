@@ -201,14 +201,13 @@ sub new {
                     regex   => qr/^[1|0]$/,
                 },
                 shutdown_binary => {
-                    default   => '/sbin/shutdown',
+                    default   => '/sbin/poweroff',
                     type      => SCALAR,
                     callbacks => {
                         'Shutdown binary exists' => sub{ -x shift() },
                     },
                 },
                 shutdown_args => {
-                    default => [qw/-h now/],
                     type    => ARRAYREF,
                 },
                 monitor => {
