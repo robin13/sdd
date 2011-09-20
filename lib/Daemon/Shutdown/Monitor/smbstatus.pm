@@ -102,55 +102,50 @@ sub run {
     my $logger = $self->{logger};
 
     $logger->info( "Monitor started running: smbstatus" );
-    
-    # The loop
-    while( 1 ){
-        my $conditions_met = 1;
+    my $conditions_met = 1;
 
-        # look for locks
-        my @cmd = ( qw/smbstatus -L/ );
-        $logger->debug( "Monitor smbstatus CMD: " . join( ' ', @cmd ) );
+    # look for locks
+    my @cmd = ( qw/smbstatus -L/ );
+    $logger->debug( "Monitor smbstatus CMD: " . join( ' ', @cmd ) );
         
-        my( $in, $out, $err );
-        if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
-            $logger->warn( "Could not run '" . join( ' ', @cmd ) . "': $!" );
-        }
-	    
-        if( $err ) {
-            $logger->error( "Monitor smbstatus: $err" );
-            $conditions_met = 0;
-        }
-            
-        # If are active locks, the conditions for trigger are not met
-        # XXX other languages?
-        if( $out =~ m/Locked files:/ ){
-            $logger->debug( "Monitor smbstatus sees active file locks" );
-            $conditions_met = 0;
-        }
-
-        if( $conditions_met ) {
-            $self->{trigger_pending} = $self->{trigger_pending} || time();
-
-            if( $self->{trigger_pending} and 
-                ( time() - $self->{trigger_pending} ) >=  $self->{params}->{trigger_time} ) {
-                # ... and the trigger was set, and time has run out: time to return!
-                $logger->info( "Monitor smbstatus trigger time reached after $self->{params}->{trigger_time}" );
-                return 1;
-            }
-
-            $logger->info( "Monitor smbstatus found no locks: trigger pending." );
-       }else{
-            if( $self->{trigger_pending} ){
-                $logger->info( "Monitor smbstatus trigger time being reset because of new file locks" );
-            }
-            # Conditions not met - reset the trigger incase it was previously set.
-            $self->{trigger_pending} = 0;
-        }
-        $logger->debug( "Monitor smbstatus sleeping $self->{params}->{loop_sleep}" );
-        sleep( $self->{params}->{loop_sleep} );
+    my( $in, $out, $err );
+    if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
+        $logger->warn( "Could not run '" . join( ' ', @cmd ) . "': $!" );
     }
-}
+	    
+    if( $err ) {
+        $logger->error( "Monitor smbstatus: $err" );
+        $conditions_met = 0;
+    }
+            
+    # If are active locks, the conditions for trigger are not met
+    # XXX other languages?
+    if( $out =~ m/Locked files:/ ){
+        $logger->debug( "Monitor smbstatus sees active file locks" );
+        $conditions_met = 0;
+    }
 
+    if( $conditions_met ) {
+        $self->{trigger_pending} = $self->{trigger_pending} || time();
+
+        if( $self->{trigger_pending} and 
+            ( time() - $self->{trigger_pending} ) >=  $self->{params}->{trigger_time} ) {
+            # ... and the trigger was set, and time has run out: time to return!
+            $logger->info( "Monitor smbstatus trigger time reached after $self->{params}->{trigger_time}" );
+            return 1;
+        }
+
+        $logger->info( "Monitor smbstatus found no locks: trigger pending." );
+    }else{
+        if( $self->{trigger_pending} ){
+            $logger->info( "Monitor smbstatus trigger time being reset because of new file locks" );
+        }
+        # Conditions not met - reset the trigger incase it was previously set.
+        $self->{trigger_pending} = 0;
+    }
+    
+    return 0;
+}
 
 =head1 AUTHOR
 

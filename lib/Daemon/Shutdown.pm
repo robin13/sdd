@@ -8,6 +8,7 @@ use Params::Validate qw/:all/;
 use File::Basename;
 use IPC::Run;
 use User;
+use AnyEvent;
 
 =head1 NAME
 
@@ -274,6 +275,39 @@ sub new {
     return $self;
 }
 
+=head2 shutdown
+
+Shutdown the system, if not in test mode
+
+=cut
+sub shutdown {
+    my $self = shift;
+    my $logger = $self->{logger};
+    
+    $logger->info( "Shutting down" );
+    
+    if( $self->{params}->{test}){
+	    $logger->info( "Not really shutting down because running in test mode" );
+    }else{
+        # Do the actual shutdown
+        my @cmd = ($self->{params}->{shutdown_binary}, @{ $self->{params}->{shutdown_args} });
+        if( $self->{params}->{use_sudo} ){
+            unshift( @cmd, 'sudo' );
+        }
+
+        my( $in, $out, $err );
+        if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
+            $logger->error( "Could not run '" . join( ' ', @cmd ) . "': $!" );
+	    }
+        if( $err ) {
+	        $logger->error( "Could not shutdown: $err" );
+        }
+        if( $self->{params}->{exit_after_trigger} ){
+            exit;
+        }
+    }
+}
+
 =head2 start
 
 Start the shutdown daemon
@@ -289,34 +323,20 @@ sub start {
 
     sleep( $self->{params}->{sleep_before_run} );
     
+    # set up timers then wait forever
     foreach my $monitor_name ( keys %{ $self->{monitors} } ) {
         my $monitor = $self->{monitors}->{$monitor_name};
         
-        $monitor->run();
-    
-        $logger->info( "Shutting down" );
-        if( $self->{test} ){
-	        $logger->info( "Not really shutting down because running in test mode" );
-        }else{
-            # Do the actual shutdown
-            my @cmd = ($self->{params}->{shutdown_binary}, @{ $self->{params}->{shutdown_args} });
-            if( $self->{params}->{use_sudo} ){
-                unshift( @cmd, 'sudo' );
-            }
-
-            my( $in, $out, $err );
-            if( ! IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
-        	    $logger->error( "Could not run '" . join( ' ', @cmd ) . "': $!" );
-	        }
-        	if( $err ) {
-	            $logger->error( "Could not shutdown: $err" );
-        	}
-            
-            if( $self->{params}->{exit_after_trigger} ){
-                exit;
-            }
-        }
+        $logger->debug( "Setting timer for monitor $monitor_name: $monitor->{params}->{loop_sleep} seconds" );
+        $monitor->{timer} = AnyEvent->timer(
+            after => 0,
+            interval => $monitor->{params}->{loop_sleep},
+            cb => sub { $self->shutdown() if $monitor->run() },
+        );
     }
+    $logger->debug( 'Entering main listen loop using ' . $AnyEvent::MODEL );
+    AnyEvent::CondVar->recv;
+    
 }
 
 =head1 AUTHOR
