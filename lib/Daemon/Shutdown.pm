@@ -97,7 +97,13 @@ Default: 0
 
 The full path to the shutdown binary
 
-Default: /sbin/shutdown
+Default: /sbin/poweroff
+
+=item shutdown_args <ArrayRef>
+
+Any args to pass to your shutdown_binary
+
+Default: none
 
 =back
 
@@ -107,6 +113,9 @@ Default: /sbin/shutdown
 log_level: INFO
 log_file: /var/log/sdd.log
 shutdown_binary: /sbin/shutdown
+shutdown_args:
+  - -h
+  - now
 exit_after_trigger: 0
 sleep_before_run: 30
 verbose: 0
