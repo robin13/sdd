@@ -172,7 +172,7 @@ sub new {
 
     # Merge the default, config file, and passed parameters
     %params = ( %$file_config, %params );
-
+    printf "[%s]\n", $params{shutdown_after_triggered_monitors};
     my @validate = map { $_, $params{$_} } keys( %params );
     %params = validate_with(
         params => \%params,
@@ -233,7 +233,7 @@ sub new {
             shutdown_after_triggered_monitors => {
                 default => 1,
                 type    => SCALAR,
-                regex   => qr/[all|\d+]/,
+                regex   => qr/^(all|\d+)$/,
             }
         },
 
@@ -318,6 +318,10 @@ sub toggle_trigger {
     my ( $self, $monitor_name, $toggle ) = @_;
     my $logger = $self->{logger};
 
+    if ( !defined $toggle || $toggle !~ /^0|1$/ ) {
+        $logger->logdie( "Called with invalid value for toggle" );
+    }
+
     if ( defined $self->{active_monitors}->{$monitor_name}
         && $self->{active_monitors}->{$monitor_name} == $toggle )
     {
@@ -359,10 +363,17 @@ sub shutdown {
     } else {
 
         # Do the actual shutdown
-        my @cmd = ( $self->{params}->{shutdown_binary}, @{ $self->{params}->{shutdown_args} } );
+        my @cmd = ( $self->{params}->{shutdown_binary} );
+
+        # have any args?
+        if ( $self->{params}->{shutdown_args} ) {
+            push @cmd, @{ $self->{params}->{shutdown_args} };
+        }
+
         if ( $self->{params}->{use_sudo} ) {
             unshift( @cmd, 'sudo' );
         }
+        $logger->debug( "Shutting down with cmd: " . join( ' ', @cmd ) );
 
         my ( $in, $out, $err );
         if ( not IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
