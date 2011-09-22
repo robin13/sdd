@@ -105,6 +105,13 @@ Any args to pass to your shutdown_binary
 
 Default: none
 
+=item shutdown_after_triggered_monitors <Str>
+
+The number of monitors which need to be triggered at the same time to cause a 
+shutdown. Can be a number or the word 'all'.
+
+Default: 1
+
 =back
 
 =head3 Example (YAML formatted) configuration file
@@ -165,7 +172,7 @@ sub new {
 
     # Merge the default, config file, and passed parameters
     %params = ( %$file_config, %params );
-
+    printf "[%s]\n", $params{shutdown_after_triggered_monitors};
     my @validate = map { $_, $params{$_} } keys( %params );
     %params = validate_with(
         params => \%params,
@@ -218,8 +225,16 @@ sub new {
                     },
                 },
             },
-            shutdown_args => { type => ARRAYREF, },
-            monitor       => { type => HASHREF, },
+            shutdown_args => {
+                type     => ARRAYREF,
+                optional => 1
+            },
+            monitor                           => { type => HASHREF, },
+            shutdown_after_triggered_monitors => {
+                default => 1,
+                type    => SCALAR,
+                regex   => qr/^(all|\d+)$/,
+            }
         },
 
         # A little less verbose than Carp...
@@ -277,7 +292,58 @@ sub new {
     }
     $self->{monitors} = \%monitors;
 
+    my $num_monitors = keys %monitors;
+    if (   $self->{params}->{shutdown_after_triggered_monitors} eq 'all'
+        || $self->{params}->{shutdown_after_triggered_monitors} > $num_monitors )
+    {
+        $self->{params}->{shutdown_after_triggered_monitors} = $num_monitors;
+    }
+
+    $logger->debug(
+        sprintf "Will shutdown if %d of %d monitors agree",
+        $self->{params}->{shutdown_after_triggered_monitors},
+        $num_monitors
+    );
+    $self->{num_active_monitors} = 0;
     return $self;
+}
+
+=head2 toggle_trigger
+
+Toggle whether a monitor wants to shutdown and, if enough agree, call shutdown
+
+=cut
+
+sub toggle_trigger {
+    my ( $self, $monitor_name, $toggle ) = @_;
+    my $logger = $self->{logger};
+
+    if ( !defined $toggle || $toggle !~ /^0|1$/ ) {
+        $logger->logdie( "Called with invalid value for toggle" );
+    }
+
+    if ( defined $self->{active_monitors}->{$monitor_name}
+        && $self->{active_monitors}->{$monitor_name} == $toggle )
+    {
+
+        # seen it before, don't care
+        return;
+    }
+
+    # set the toggle
+    $self->{active_monitors}->{$monitor_name} = $toggle;
+
+    if ( $toggle == 1 ) {
+        $self->{num_active_monitors}++;
+    } else {
+        $self->{num_active_monitors}-- unless $self->{num_active_monitors} == 0;
+    }
+
+    $logger->debug( $self->{num_active_monitors} . " monitors are ready to shutdown" );
+
+    if ( $self->{num_active_monitors} >= $self->{params}->{shutdown_after_triggered_monitors} ) {
+        $self->shutdown();
+    }
 }
 
 =head2 shutdown
@@ -297,10 +363,17 @@ sub shutdown {
     } else {
 
         # Do the actual shutdown
-        my @cmd = ( $self->{params}->{shutdown_binary}, @{ $self->{params}->{shutdown_args} } );
+        my @cmd = ( $self->{params}->{shutdown_binary} );
+
+        # have any args?
+        if ( $self->{params}->{shutdown_args} ) {
+            push @cmd, @{ $self->{params}->{shutdown_args} };
+        }
+
         if ( $self->{params}->{use_sudo} ) {
             unshift( @cmd, 'sudo' );
         }
+        $logger->debug( "Shutting down with cmd: " . join( ' ', @cmd ) );
 
         my ( $in, $out, $err );
         if ( not IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
@@ -339,7 +412,13 @@ sub start {
         $monitor->{timer} = AnyEvent->timer(
             after    => 0,
             interval => $monitor->{params}->{loop_sleep},
-            cb       => sub { $self->shutdown() if $monitor->run() },
+            cb       => sub {
+                if ( $monitor->run() ) {
+                    $self->toggle_trigger( $monitor_name, 1 );
+                } else {
+                    $self->toggle_trigger( $monitor_name, 0 );
+                }
+            }
         );
     }
     $logger->debug( 'Entering main listen loop using ' . $AnyEvent::MODEL );
