@@ -172,7 +172,7 @@ sub new {
 
     # Merge the default, config file, and passed parameters
     %params = ( %$file_config, %params );
-    printf "[%s]\n", $params{shutdown_after_triggered_monitors};
+
     my @validate = map { $_, $params{$_} } keys( %params );
     %params = validate_with(
         params => \%params,
