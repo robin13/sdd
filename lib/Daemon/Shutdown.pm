@@ -290,7 +290,8 @@ sub new {
             die( "Could not initialise monitor: $monitor_name\n$@\n" );
         }
     }
-    $self->{monitors} = \%monitors;
+    $self->{monitors}           = \%monitors;
+    $self->{triggered_monitors} = {};
 
     my $num_monitors = keys %monitors;
     if (   $self->{params}->{shutdown_after_triggered_monitors} eq 'all'
@@ -304,7 +305,7 @@ sub new {
         $self->{params}->{shutdown_after_triggered_monitors},
         $num_monitors
     );
-    $self->{num_active_monitors} = 0;
+    $self->{num_triggered_monitors} = 0;
     return $self;
 }
 
@@ -322,26 +323,21 @@ sub toggle_trigger {
         $logger->logdie( "Called with invalid value for toggle" );
     }
 
-    if ( defined $self->{active_monitors}->{$monitor_name}
-        && $self->{active_monitors}->{$monitor_name} == $toggle )
-    {
+    # set/unset the toggle
+    if ( $toggle and not $self->{triggered_monitors}->{$monitor_name} ) {
+        $self->{triggered_monitors}->{$monitor_name} = 1;
+    } elsif ( $self->{triggered_monitors}->{$monitor_name} and not $toggle ) {
+        delete( $self->{triggered_monitors}->{$monitor_name} );
+    } else {
 
         # seen it before, don't care
         return;
     }
 
-    # set the toggle
-    $self->{active_monitors}->{$monitor_name} = $toggle;
-
-    if ( $toggle == 1 ) {
-        $self->{num_active_monitors}++;
-    } else {
-        $self->{num_active_monitors}-- unless $self->{num_active_monitors} == 0;
-    }
-
-    $logger->debug( $self->{num_active_monitors} . " monitors are ready to shutdown" );
-
-    if ( $self->{num_active_monitors} >= $self->{params}->{shutdown_after_triggered_monitors} ) {
+    # Store how many are triggered, and shutdown if limit reached
+    $self->{num_triggered_monitors} = scalar keys %{ $self->{triggered_monitors} };
+    $logger->debug( $self->{num_triggered_monitors} . " monitors are ready to shutdown" );
+    if ( $self->{num_triggered_monitors} >= $self->{params}->{shutdown_after_triggered_monitors} ) {
         $self->shutdown();
     }
 }

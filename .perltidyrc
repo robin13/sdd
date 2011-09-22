@@ -1,8 +1,9 @@
 # Backup and modify in place (instant 
 -b
 
-# Backup extensios ~
+# Backup extensions ~
 -bext=~
+
 # Line length
 -l=120
 

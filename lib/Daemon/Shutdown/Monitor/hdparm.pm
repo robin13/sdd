@@ -97,7 +97,7 @@ sub new {
             },
             disks => {
                 type      => ARRAYREF,
-                default   => [ '/dev/sda' ],
+                default   => ['/dev/sda'],
                 callbacks => {
                     'Disks exist' => sub {
                         my $disks_ref = shift();
