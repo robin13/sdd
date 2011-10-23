@@ -3,9 +3,9 @@ Makefile.PL
 README
 ignore.txt
 examples/etc/sdd.conf
-examples/init.d/sdd
 lib/Daemon/Shutdown.pm
 lib/Daemon/Shutdown/Monitor/hdparm.pm
+lib/Daemon/Shutdown/Monitor/smbstatus.pm
 t/00-load.t
 t/manifest.t
 t/pod-coverage.t
