@@ -11,7 +11,7 @@ Build-Depends-Indep: libanyevent-perl,
  libyaml-perl,
  perl
 Standards-Version: 3.9.2
-Homepage: http://search.cpan.org/dist/Daemon-Shutdown/
+Homepage: https://metacpan.org/dist/Daemon-Shutdown/
 
 Package: daemon-shutdown
 Architecture: all
@@ -23,10 +23,9 @@ Depends: ${misc:Depends}, ${perl:Depends},
  libuser-perl,
  libyaml-perl,
  perl
-Recommends: hdparm, 
+Recommends: hdparm, samba
 Description: Service to shut down server as soon as it can (to save power).
- It is a Linux service to shut down a server down as soon as it can (to save power).
- .
- A home NAS which is turned on when needed, manually or by wakeonlan
+ It is a Linux service to shut down a server down as soon as it can, typically
+ used for a home NAS which is turned on when needed, manually or by wakeonlan
  but should shut down automatically when no users are using it any more.
 
