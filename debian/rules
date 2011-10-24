@@ -1,5 +1,4 @@
 #!/usr/bin/make -f
 
 %:
-	dh_install examples/systemd/daemon-shutdown.service lib/systemd/system/
 	dh $@
