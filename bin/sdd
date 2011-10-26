@@ -110,6 +110,11 @@ if ( $cli_args{version} ) {
 }
 
 my $sdd = Daemon::Shutdown->new( %cli_args );
-$sdd->start();
+use Try::Tiny;
+try{
+    $sdd->start();
+}catch{
+    $sdd->{logger}
+};
 
 exit;
