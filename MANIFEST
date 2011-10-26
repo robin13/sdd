@@ -16,7 +16,6 @@ debian/daemon-shutdown.logrotate
 debian/rules
 debian/source/format
 examples/etc/sdd.conf
-examples/init.d/sdd
 ignore.txt
 lib/Daemon/Shutdown.pm
 lib/Daemon/Shutdown/Monitor/hdparm.pm
