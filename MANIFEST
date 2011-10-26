@@ -2,7 +2,6 @@ MANIFEST
 Makefile.PL
 README
 bin/sdd
-debian
 debian/changelog
 debian/compat
 debian/control
@@ -15,7 +14,6 @@ debian/daemon-shutdown.install
 debian/daemon-shutdown.links
 debian/daemon-shutdown.logrotate
 debian/rules
-debian/source
 debian/source/format
 examples/etc/sdd.conf
 examples/init.d/sdd
