@@ -1,0 +1,9 @@
+Build
+MYMETA.yml
+MYMETA.json
+_build
+blib
+*.swp
+Makefile
+pm_to_blib
+Daemon-Shutdown-*.tar.gz
