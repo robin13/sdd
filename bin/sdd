@@ -79,7 +79,6 @@ use warnings;
 use Getopt::Long;
 use Pod::Usage;
 use Daemon::Shutdown;
-use Try::Tiny;
 
 my %cli_args;
 my $result = GetOptions(
@@ -111,10 +110,5 @@ if ( $cli_args{version} ) {
 }
 
 my $sdd = Daemon::Shutdown->new( %cli_args );
-try{
-    $sdd->start();
-}catch{
-    $sdd->{logger}->warn( "Caught fatal error: $_" );
-};
-$sdd->{logger}->warn( "Exiting now..." );
+$sdd->start();
 exit;

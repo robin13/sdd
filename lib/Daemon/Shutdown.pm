@@ -9,6 +9,7 @@ use File::Basename;
 use IPC::Run;
 use User;
 use AnyEvent;
+use Try::Tiny;
 
 =head1 NAME
 
@@ -16,11 +17,11 @@ Daemon::Shutdown - A Shutdown Daemon
 
 =head1 VERSION
 
-Version 0.07
+Version 0.08
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 =head1 SYNOPSIS
 
@@ -40,31 +41,31 @@ Create new instance of Daemon::Shutdown
 
 =over 2
 
-=item log_file <Str>
+=item * log_file <Str>
 
 Path to log file
 
 Default: /var/log/sdd.log'
 
-=item log_level <Str>
+=item * log_level <Str>
 
 Logging level (from Log::Log4perl).  Valid are: DEBUG, INFO, WARN, ERROR
 
 Default: INFO
 
-=item verbose 1|0
+=item * verbose 1|0
 
 If enabled, logging info will be printed to screen as well
 
 Default: 0
 
-=item test 1|0
+=item * test 1|0
 
 If enabled shutdown will not actually be executed.
 
 Default: 0
 
-=item sleep_before_run <Int>
+=item * sleep_before_run <Int>
 
 Time in seconds to sleep before running the monitors.
 e.g. to give the system time to boot, and not to shut down before users
@@ -72,7 +73,7 @@ have started using the freshly started system.
 
 Default: 3600
 
-=item exit_after_trigger 1|0
+=item * exit_after_trigger 1|0
 
 If enabled will exit the application after a monitor has triggered.
 Normally it is a moot point, because if a monitor has triggered, then a shutdown
@@ -80,12 +81,12 @@ is initialised, so the script will stop running anyway.
 
 Default: 0
 
-=item monitor HASHREF
+=item * monitor HASHREF
 
 A hash of monitor definitions.  Each hash key must map to a Monitor module, and
 contain a hash with the parameters for the module.
 
-=item use_sudo 1|0
+=item * use_sudo 1|0
 
 Use sudo for shutdown
  
@@ -93,29 +94,35 @@ sudo shutdown -h now
 
 Default: 0
 
-=item shutdown_binary <Str>
+=item * shutdown_binary <Str>
 
 The full path to the shutdown binary
 
 Default: /sbin/poweroff
 
-=item shutdown_args <ArrayRef>
+=item * shutdown_args <ArrayRef>
 
 Any args to pass to your shutdown_binary
 
 Default: none
 
-=item shutdown_after_triggered_monitors <Str>
+=item * shutdown_after_triggered_monitors <Str>
 
 The number of monitors which need to be triggered at the same time to cause a 
 shutdown. Can be a number or the word 'all'.
 
 Default: 1
 
+=item * timeout_for_shutdown <Int>
+
+Seconds which the system call for shutdown should wait before timing out.
+
+Default: 10
+
 =back
 
 =head3 Example (YAML formatted) configuration file
- 
+  
 ---
 log_level: INFO
 log_file: /var/log/sdd.log
@@ -234,6 +241,10 @@ sub new {
                 default => 1,
                 type    => SCALAR,
                 regex   => qr/^(all|\d+)$/,
+            },
+            timeout_for_shutdown    => {
+                default => 1,
+                regex   => qr/^\d+$/,
             }
         },
 
@@ -371,16 +382,21 @@ sub shutdown {
         }
         $logger->debug( "Shutting down with cmd: " . join( ' ', @cmd ) );
 
-        my ( $in, $out, $err );
-        if ( not IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( 10 ) ) ) {
-            $logger->error( "Could not run '" . join( ' ', @cmd ) . "': $!" );
+        # Sometimes the shutdown call can timeout (system unresponsive?). In this case, don't
+        # die, and also don't exit_after_trigger - allow the trigger to hit again, and try again.
+        try {
+            my ( $in, $out, $err );
+            IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( $self->timeout_for_shutdown ) );
+            if ( $err ) {
+                $logger->error( "Could not shutdown: $err" );
+            }
+            if ( $self->{params}->{exit_after_trigger} ) {
+                exit;
+            }
         }
-        if ( $err ) {
-            $logger->error( "Could not shutdown: $err" );
-        }
-        if ( $self->{params}->{exit_after_trigger} ) {
-            exit;
-        }
+        catch {
+            $logger->error( "Shutdown command failed '" . join( ' ', @cmd ) . "': $_" );
+        };
     }
 }
 
