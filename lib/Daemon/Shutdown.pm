@@ -17,11 +17,11 @@ Daemon::Shutdown - A Shutdown Daemon
 
 =head1 VERSION
 
-Version 0.08
+Version 0.09
 
 =cut
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 =head1 SYNOPSIS
 
@@ -386,7 +386,7 @@ sub shutdown {
         # die, and also don't exit_after_trigger - allow the trigger to hit again, and try again.
         try {
             my ( $in, $out, $err );
-            IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( $self->timeout_for_shutdown ) );
+            IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( $self->{timeout_for_shutdown} ) );
             if ( $err ) {
                 $logger->error( "Could not shutdown: $err" );
             }
