@@ -17,11 +17,11 @@ Daemon::Shutdown - A Shutdown Daemon
 
 =head1 VERSION
 
-Version 0.09
+Version 0.10
 
 =cut
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 =head1 SYNOPSIS
 
@@ -243,7 +243,7 @@ sub new {
                 regex   => qr/^(all|\d+)$/,
             },
             timeout_for_shutdown    => {
-                default => 1,
+                default => 10,
                 regex   => qr/^\d+$/,
             }
         },
@@ -339,10 +339,8 @@ sub toggle_trigger {
         $self->{triggered_monitors}->{$monitor_name} = 1;
     } elsif ( $self->{triggered_monitors}->{$monitor_name} and not $toggle ) {
         delete( $self->{triggered_monitors}->{$monitor_name} );
-    } else {
-
-        # seen it before, don't care
-        return;
+    } else { 
+        # seen it before, do care, because maybe last attempt to shutdown failed?
     }
 
     # Store how many are triggered, and shutdown if limit reached
@@ -386,7 +384,7 @@ sub shutdown {
         # die, and also don't exit_after_trigger - allow the trigger to hit again, and try again.
         try {
             my ( $in, $out, $err );
-            IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( $self->{timeout_for_shutdown} ) );
+            IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( $self->{params}->{timeout_for_shutdown} ) );
             if ( $err ) {
                 $logger->error( "Could not shutdown: $err" );
             }
