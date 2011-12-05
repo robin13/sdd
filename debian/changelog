@@ -1,4 +1,4 @@
-daemon-shutdown (0.08-1) unstable; urgency=low
+daemon-shutdown (0.09-1) unstable; urgency=low
 
   * New upstream release
   * Added new dependency to debian/control
