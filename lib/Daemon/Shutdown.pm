@@ -386,7 +386,7 @@ sub shutdown {
         # die, and also don't exit_after_trigger - allow the trigger to hit again, and try again.
         try {
             my ( $in, $out, $err );
-            IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( $self->timeout_for_shutdown ) );
+            IPC::Run::run( \@cmd, \$in, \$out, \$err, IPC::Run::timeout( $self->{timeout_for_shutdown} ) );
             if ( $err ) {
                 $logger->error( "Could not shutdown: $err" );
             }
