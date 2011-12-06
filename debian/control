@@ -9,6 +9,7 @@ Build-Depends-Indep: libanyevent-perl,
  libparams-validate-perl,
  libuser-perl,
  libyaml-perl,
+ libtry-tiny-perl,
  perl
 Standards-Version: 3.9.2
 Homepage: https://metacpan.org/dist/Daemon-Shutdown/
@@ -22,6 +23,7 @@ Depends: ${misc:Depends}, ${perl:Depends},
  libparams-validate-perl,
  libuser-perl,
  libyaml-perl,
+ libtry-tiny-perl,
  perl
 Recommends: hdparm, samba
 Description: Service to shut down server as soon as it can (to save power).
