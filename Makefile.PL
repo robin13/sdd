@@ -25,6 +25,11 @@ WriteMakefile(
 	'User'             => 0,
 	'YAML::Any'        => 0,
     },
+    META_MERGE => {
+        resources => {
+            repository => 'https://github.com/robin13/sdd',
+        },
+    },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES    => 'Daemon-Shutdown-*' },
 );
