@@ -5,20 +5,11 @@ use strict;
 use Params::Validate qw/:all/;
 use IPC::Run;
 use YAML::Any;
-use User;
 use Log::Log4perl;
 
 =head1 NAME
 
 Daemon::Shutdown::Monitor::hdparm - a hdparm specific monitor
-
-=head1 VERSION
-
-Version 0.07
-
-=cut
-
-our $VERSION = '0.07';
 
 =head1 SYNOPSIS
 
@@ -122,7 +113,7 @@ sub new {
     bless $self, $class;
     my $logger = Log::Log4perl->get_logger();
     $self->{logger} = $logger;
-    $logger->debug( "Monitor hdparm params:\n" . Dump( \%params ) );
+    $logger->debug( "Monitor 'hdparm' params:\n" . Dump( \%params ) );
 
     return $self;
 }
@@ -169,13 +160,16 @@ sub run {
     if ( $conditions_met ) {
 
         # All disks are spun down! Set the trigger_pending time.
-        $self->{trigger_pending} = $self->{trigger_pending} || time();
+        $self->{trigger_pending} ||= time();
         if ( $self->{trigger_pending}
             and ( time() - $self->{trigger_pending} ) >= $self->{params}->{trigger_time} )
         {
 
             # ... and the trigger was set, and time has run out: time to return!
             $logger->info( "Monitor hdparm trigger time reached after $self->{params}->{trigger_time}" );
+            # Reset the trigger_pending because otherwise if this was a suspend, and the computer comes
+            # up again hours/days later, it will immediately fall asleep again...
+            $self->{trigger_pending} = 0;
             return 1;
         }
 
@@ -193,11 +187,11 @@ sub run {
 
 =head1 AUTHOR
 
-Robin Clarke, C<< <perl at robinclarke.net> >>
+Robin Clarke, C<perl at robinclarke.net>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2011 Robin Clarke.
+Copyright 2015 Robin Clarke.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
